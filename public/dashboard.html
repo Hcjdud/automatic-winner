@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Личный кабинет - WTF Mail</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .user-info {
+      background: #f0f7ff;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+    }
+    textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      min-height: 120px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>📬 Личный кабинет</h1>
+      
+      <div class="user-info" id="userInfo">
+        <h2>Здравствуйте, <span id="userName"></span>!</h2>
+        <p>Ваш email: <strong id="userEmail"></strong></p>
+      </div>
+
+      <h2>📝 Отправить сообщение</h2>
+      <textarea id="messageText" placeholder="Введите ваше сообщение..."></textarea>
+      <button class="btn" onclick="sendMessage()">Отправить</button>
+      <div id="messageResult" class="message"></div>
+
+      <button class="btn secondary" onclick="logout()" style="margin-top:20px;">Выйти</button>
+    </div>
+  </div>
+
+  <script>
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/check-auth');
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          document.getElementById('userName').textContent = `${data.user.name} ${data.user.surname}`;
+          document.getElementById('userEmail').textContent = data.user.email;
+        } else {
+          window.location.href = '/';
+        }
+      } catch (error) {
+        console.error('Ошибка:', error);
+      }
+    }
+
+    async function sendMessage() {
+      const message = document.getElementById('messageText').value;
+      const resultDiv = document.getElementById('messageResult');
+
+      if (!message.trim()) {
+        resultDiv.className = 'message error';
+        resultDiv.textContent = 'Введите сообщение';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/send-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          resultDiv.className = 'message success';
+          resultDiv.textContent = '✅ Сообщение отправлено';
+          document.getElementById('messageText').value = '';
+        } else {
+          resultDiv.className = 'message error';
+          resultDiv.textContent = data.error;
+        }
+      } catch (error) {
+        resultDiv.className = 'message error';
+        resultDiv.textContent = 'Ошибка сервера';
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/';
+      } catch (error) {
+        console.error('Ошибка выхода:', error);
+      }
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>
