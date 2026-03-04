@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Успех - WTF Mail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card success-card">
+      <h1>✅ Регистрация завершена!</h1>
+      <p class="welcome" id="welcome-message"></p>
+      <a href="/dashboard.html" class="btn">Перейти в личный кабинет</a>
+      <a href="/" class="btn secondary">На главную</a>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const name = urlParams.get('name');
+    const surname = urlParams.get('surname');
+    document.getElementById('welcome-message').textContent = `Добро пожаловать, ${name} ${surname}!`;
+  </script>
+</body>
+</html>
