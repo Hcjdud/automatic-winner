@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Подтверждение - WTF Mail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Подтверждение</h1>
+      <p class="info">Код отправлен на <span id="email-display"></span></p>
+      
+      <div class="timer" id="timer">15:00</div>
+
+      <div class="code-inputs">
+        <input type="text" maxlength="1" class="code-digit" id="digit1" onkeyup="moveToNext(this, 'digit2')">
+        <input type="text" maxlength="1" class="code-digit" id="digit2" onkeyup="moveToNext(this, 'digit3')">
+        <input type="text" maxlength="1" class="code-digit" id="digit3" onkeyup="moveToNext(this, 'digit4')">
+        <input type="text" maxlength="1" class="code-digit" id="digit4" onkeyup="moveToNext(this, 'digit5')">
+        <input type="text" maxlength="1" class="code-digit" id="digit5" onkeyup="moveToNext(this, 'digit6')">
+        <input type="text" maxlength="1" class="code-digit" id="digit6" onkeyup="moveToNext(this, 'done')">
+      </div>
+
+      <button class="btn" onclick="verifyCode()">Подтвердить</button>
+      <button class="btn secondary" onclick="resendCode()" id="resendBtn">Отправить повторно</button>
+      <div id="message" class="message"></div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const email = urlParams.get('email');
+    document.getElementById('email-display').textContent = email;
+
+    let timeLeft = 900;
+    let timerInterval;
+
+    function startTimer() {
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      document.getElementById('timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    startTimer();
+
+    async function checkTimeLeft() {
+      const response = await fetch(`/api/time-left?email=${encodeURIComponent(email)}`);
+      const data = await response.json();
+      if (data.timeLeft > 0) {
+        timeLeft = Math.floor(data.timeLeft);
+      }
+    }
+    checkTimeLeft();
+
+    function moveToNext(current, nextId) {
+      if (current.value.length === 1) {
+        if (nextId === 'done') {
+          verifyCode();
+        } else {
+          document.getElementById(nextId).focus();
+        }
+      }
+    }
+
+    function getFullCode() {
+      let code = '';
+      for (let i = 1; i <= 6; i++) {
+        code += document.getElementById(`digit${i}`).value;
+      }
+      return code;
+    }
+
+    async function verifyCode() {
+      const code = getFullCode();
+      const messageDiv = document.getElementById('message');
+
+      if (code.length !== 6) {
+        messageDiv.className = 'message error';
+        messageDiv.textContent = 'Введите полный код';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, code })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          window.location.href = `/success.html?name=${encodeURIComponent(data.name)}&surname=${encodeURIComponent(data.surname)}`;
+        } else {
+          messageDiv.className = 'message error';
+          messageDiv.textContent = data.error || 'Неверный код';
+        }
+      } catch (error) {
+        messageDiv.className = 'message error';
+        messageDiv.textContent = 'Ошибка сервера';
+      }
+    }
+
+    async function resendCode() {
+      const btn = document.getElementById('resendBtn');
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('/api/resend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById('message').className = 'message success';
+          document.getElementById('message').textContent = 'Новый код отправлен';
+          timeLeft = 900;
+          setTimeout(() => {
+            btn.disabled = false;
+          }, 60000);
+        } else {
+          document.getElementById('message').className = 'message error';
+          document.getElementById('message').textContent = data.error;
+          btn.disabled = false;
+        }
+      } catch (error) {
+        document.getElementById('message').className = 'message error';
+        document.getElementById('message').textContent = 'Ошибка сервера';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
