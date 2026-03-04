@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WTF Mail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>WTF Mail</h1>
+      <p class="subtitle">Простая и быстрая регистрация</p>
+      <div id="authSection">
+        <a href="/register.html" class="btn">Начать регистрацию</a>
+      </div>
+      <div id="userSection" style="display: none;">
+        <p>Вы уже вошли как <span id="userDisplayName"></span></p>
+        <a href="/dashboard.html" class="btn">Перейти в кабинет</a>
+        <button class="btn secondary" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/check-auth');
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          document.getElementById('authSection').style.display = 'none';
+          document.getElementById('userSection').style.display = 'block';
+          document.getElementById('userDisplayName').textContent = 
+            `${data.user.name} ${data.user.surname}`;
+        }
+      } catch (error) {
+        console.error('Ошибка:', error);
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.reload();
+      } catch (error) {
+        console.error('Ошибка выхода:', error);
+      }
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>
