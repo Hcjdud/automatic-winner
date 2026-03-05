@@ -1,7 +1,7 @@
 {
-  "name": "wtf-mail",
-  "version": "3.0.0",
-  "description": "Двухэтапная регистрация с сессиями и отправкой сообщений",
+  "name": "saiv",
+  "version": "1.0.0",
+  "description": "Сайв - двухэтапная регистрация с подтверждением по email",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
